@@ -1,0 +1,179 @@
+version: '3.6'
+services:
+
+  #data base container
+  mongo_one:
+    container_name: mongo_one
+    image: mongo
+    ports:
+      - '27018:27017'
+    volumes: 
+      - ./mongo1:/data/db
+
+  #node1
+  server1:
+    container_name: Node1
+    restart: always
+    depends_on:
+      - server2
+    build: 
+      dockerfile: DockerFile
+      context: ./back-end
+    ports:
+      -  "8080:8080"
+    volumes:
+      - /app/node_modules
+      - ./back-end:/app
+      - node1Vol:/node
+    environment:
+      - PORT=8080
+      - DB_NAME=mongo_one
+      - NODE_NAME=Node1
+      - INDEX=0
+      - IS_LEADER=True
+      - TIMER=150
+    hostname:
+      server-1
+
+  #node2
+  server2:
+    container_name: Node2
+    restart: always
+    depends_on:
+      - server3
+    build: 
+      dockerfile: DockerFile
+      context: ./back-end
+    ports:
+      -  "8081:8080"
+    volumes:
+      - /app/node_modules
+      - ./back-end:/app
+      - node2Vol:/node
+    environment:
+      - PORT=8080
+      - DB_NAME=mongo_one
+      - NODE_NAME=Node2
+      - IS_LEADER=True
+      - TIMER=200
+      - INDEX=1
+    hostname:
+      server-2
+
+  #node3
+  server3:
+    container_name: Node3
+    restart: always
+    depends_on:
+      - server4
+    build: 
+      dockerfile: DockerFile
+      context: ./back-end
+    ports:
+      -  "8082:8080"
+    volumes:
+      - /app/node_modules
+      - ./back-end:/app
+      - node3Vol:/node
+    environment:
+      - PORT=8080
+      - DB_NAME=mongo_one
+      - NODE_NAME=Node3
+      - TIMER=250
+      - INDEX=2
+    hostname:
+      server-3
+
+  #node4
+  server4:
+    container_name: Node4
+    restart: always
+    depends_on:
+      - server5
+    build: 
+      dockerfile: DockerFile
+      context: ./back-end
+    ports:
+      -  "8083:8080"
+    volumes:
+      - /app/node_modules
+      - ./back-end:/app
+      - node4Vol:/node
+    environment:
+      - PORT=8080
+      - DB_NAME=mongo_one
+      - NODE_NAME=Node4
+      - TIMER=300
+      - INDEX=3
+    hostname:
+      server-4
+
+  #node4
+  server5:
+    container_name: Node5
+    restart: always
+    depends_on:
+      - mongo_one
+    build: 
+      dockerfile: DockerFile
+      context: ./back-end
+    ports:
+      -  "8084:8080"
+    volumes:
+      - /app/node_modules
+      - ./back-end:/app
+      - node5Vol:/node
+    environment:
+      - PORT=8080
+      - DB_NAME=mongo_one
+      - NODE_NAME=Node5
+      - TIMER=350
+      - INDEX=4
+    hostname:
+      server-5
+
+
+  client:
+    container_name: client_node
+    image: client
+    restart: always
+    build: 
+      dockerfile: DockerFile
+      context: ./front-end
+    ports:
+      - "3000:3000"
+    volumes:
+      - /app/node_modules
+      - ./front-end:/app
+    stdin_open: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+        - mongo_one
+        - server1
+        - server2
+        - server3
+        - server4
+        - server5
+
+  controller:
+      container_name: Controller
+      build: Controller/.
+      stdin_open: true
+      depends_on:
+        - mongo_one
+        - server1
+        - server2
+        - server3
+        - server4
+        - server5
+        - client
+
+volumes:
+  mongo1:
+  node1Vol:
+  node2Vol:
+  node3Vol:
+  node4Vol:
+  node5Vol:
+
